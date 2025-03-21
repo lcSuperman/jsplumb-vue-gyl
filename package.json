@@ -3,13 +3,27 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "serve": "vue-cli-service serve",
+    "dev": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "canvas": "^3.1.0",
+    "canvg": "^1.5.3",
     "core-js": "^3.8.3",
-    "vue": "^2.6.14"
+    "echarts": "^4.0.4",
+    "element-ui": "^2.15.14",
+    "html2canvas": "^1.4.1",
+    "jquery": "^3.6.0",
+    "jsdom": "^26.0.0",
+    "jsplumb": "^2.15.6",
+    "less": "^3.0.4",
+    "less-loader": "^12.2.0",
+    "panzoom": "^9.4.3",
+    "view-design": "^4.7.0",
+    "vue": "^2.6.14",
+    "vue-click-outside": "^1.1.0"
+    
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",

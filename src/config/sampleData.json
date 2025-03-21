@@ -1,0 +1,378 @@
+{
+    "edges": [
+        {
+            "from": {
+                "field": "age",
+                "name": "data1"
+
+            },
+            "to": {
+                "field": "age1",
+                "name": "middle1"
+            }
+
+        },
+        {
+            "from": {
+                "field": "age",
+                "name": "data1"
+
+            },
+            "to": {
+                "field": "age",
+                "name": "middle2"
+            }
+
+        },
+        {
+            "from": {
+                "field": "name",
+                "name": "data2"
+
+            },
+            "to": {
+                "field": "name",
+                "name": "middle2"
+            }
+
+        },
+        {
+            "from": {
+                "field": "bbb",
+                "name": "data0"
+
+            },
+            "to": {
+                "field": "name",
+                "name": "middle2"
+            }
+
+        },
+        {
+            "from": {
+                "field": "age",
+                "name": "data2"
+            },
+            "to": {
+                "field": "age",
+                "name": "middle2"
+            }
+
+        },
+        {
+            "from": {
+                "field": "grade",
+                "name": "data2"
+            },
+            "to": {
+                "field": "grade",
+                "name": "middle2"
+            }
+
+        },
+        {
+            "from": {
+                "field": "age1",
+                "name": "middle1"
+            },
+            "to": {
+                "field": "age3",
+                "name": "form1"
+            }
+
+        },
+     
+        {
+            "from": {
+                "field": "name",
+                "name": "middle2"
+            },
+            "to": {
+                "field": "name",
+                "name": "form1"
+            }
+
+        },
+        {
+            "from": {
+                "field": "class",
+                "name": "middle2"
+            },
+            "to": {
+                "field": "class",
+                "name": "form1"
+            }
+        },
+        {
+            "from": {
+                "field": "grade",
+                "name": "middle2"
+            },
+            "to": {
+                "field": "grade",
+                "name": "form1"
+            }
+        },
+        {
+            "from": {
+                "field": "name",
+                "name": "form1"
+            },
+            "to": {
+                "field": "name",
+                "name": "RS"
+            }
+        },
+        {
+            "from": {
+                "field": "name",
+                "name": "middle1"
+            },
+            "to": {
+                "field": "aaa",
+                "name": "form2"
+            }
+        },
+        {
+            "from": {
+                "field": "age1",
+                "name": "middle1"
+            },
+            "to": {
+                "field": "bbb",
+                "name": "form2"
+            }
+        },
+        {
+            "from": {
+                "field": "age",
+                "name": "middle2"
+            },
+            "to": {
+                "field": "ccc",
+                "name": "form2"
+            }
+        },
+        {
+            "from": {
+                "field": "age3",
+                "name": "form1"
+            },
+            "to": {
+                "field": "age4",
+                "name": "RS"
+            }
+        },
+        {
+            "from": {
+                "field": "grade",
+                "name": "form1"
+            },
+            "to": {
+                "field": "grade",
+                "name": "RS"
+            }
+        },
+        {
+            "from": {
+                "field": "class",
+                "name": "form1"
+            },
+            "to": {
+                "field": "class",
+                "name": "RS"
+            }
+        },
+        {
+            "from": {
+                "field": "name",
+                "name": "data3"
+            },
+            "to": {
+                "field": "name",
+                "name": "middle1"
+            }
+        }
+    ],
+    "nodes": [
+        {
+            "name": "data0",
+            "type": "Origin",
+             "id":"1-1",
+            "fields": [{
+                "name": "aaa",
+                 "id":"1-1-1",
+                 "isHover":false
+            }, {
+                "name": "bbb",
+                 "id":"1-1-2",
+                 "isHover":false
+            }, {
+                "name": "ccc",
+                  "id":"1-1-3",
+                  "isHover":false
+            }],
+            "top": 100,
+            "left": 20
+        },
+        {
+            "name": "data1",
+            "type": "Origin",
+            "id":"1-2",
+            "fields": [{
+                "name": "age",
+                "isHover":false
+            }, {
+                "name": "name",
+                "isHover":false
+            }, {
+                "name": "class",
+                "isHover":false
+            }],
+            "top": 200,
+            "left": 20
+        },
+     
+        {
+            "name": "data2",
+            "type": "Origin",
+            "id":"1-3",
+            "fields": [{
+                    "name": "age",
+                    "isHover":false
+                },
+                {
+                    "name": "name",
+                    "isHover":false
+                }, {
+                    "name": "grade",
+                    "isHover":false
+                }
+            ],
+            "top": 300,
+            "left": 20
+        },
+        {
+            "name": "data3",
+            "type": "Origin",
+            "id":"1-4",
+            "fields": [{
+                    "name": "age",
+                    "isHover":false
+                },
+                {
+                    "name": "name",
+                    "isHover":false
+                }, {
+                    "name": "grade",
+                    "isHover":false
+                }
+            ],
+            "top": 400,
+            "left": 20
+        },
+        {
+            "name": "middle1",
+            "type": "Middle",
+            "id":"2-1",
+            "fields": [{
+                "name": "age1",
+                "isHover":false
+            }, {
+                "name": "name",
+                "isHover":false
+            }],
+            "top": 100,
+            "left": 310
+        },
+        {
+            "name": "middle2",
+            "id":"2-2",
+            "type": "Middle",
+            "fields": [{
+                    "name": "age",
+                    "isHover":false
+                }, {
+                    "name": "name",
+                    "isHover":false
+                },
+                {
+                    "name": "class",
+                    "isHover":false
+                },
+                {
+                    "name": "grade",
+                    "isHover":false
+                }
+            ],
+            "top": 300,
+            "left": 310
+        },
+        {
+            "name": "form1",
+            "type": "Union",
+            "id":"3-1",
+            "fields": [{
+                    "name": "age3",
+                    "isHover":false
+                }, {
+                    "name": "name",
+                    "isHover":false
+                },
+                {
+                    "name": "class",
+                    "isHover":false
+                },
+                {
+                    "name": "grade",
+                    "isHover":false
+                }
+            ],
+            "top": 100,
+            "left": 610
+        },
+        {
+            "name": "form2",
+            "type": "Union",
+            "id":"3-2",
+            "fields": [{
+                    "name": "aaa",
+                    "isHover":false
+                }, {
+                    "name": "bbb",
+                    "isHover":false
+                },
+                {
+                    "name": "ccc",
+                    "isHover":false
+                },
+                {
+                    "name": "ddd",
+                    "isHover":false
+                }
+            ],
+            "top": 280,
+            "left": 610
+        },
+        {
+            "name": "RS",
+            "type": "RS",
+            "id":"4-1",
+            "fields": [{
+                "name": "age4",
+                "isHover":false
+            }, {
+                "name": "name",
+                 "isHover":false
+            }, {
+                "name": "class",
+                "isHover":false
+            }, {
+                "name": "grade",
+                "isHover":false
+            }],
+            "top": 100,
+            "left": 910
+        }
+    ]
+}

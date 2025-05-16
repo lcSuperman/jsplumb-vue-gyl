@@ -106,7 +106,7 @@ import { Switch } from 'element-ui'
         this.init();
       },
       //初始化
-      init() {
+      init() { 
         this.fixNodesPosition()
         //nextTick 立即更新DOM
         this.$nextTick(() => {

@@ -74,7 +74,7 @@
                         <li v-if="isInline == 'Busy' || isInline == 'no-inline'" class="systemWarning">
                             <span>{{ warningMessage }}</span>
                         </li>
-                        <li v-for="(item,index) in chartContent" :key="index">
+                        <li v-for="(item,index) in chatContent" :key="index">
                            <div v-if="item.Identity == 'other'" class="other_content_box">
                              <div class="other_info_box">
                                 <div class="otherImg">
@@ -84,7 +84,10 @@
                                 <span>{{ item.dateTime }}</span>
                              </div>
                              <div class="other_chat_content">
-                                <div class="content other_word_content"  v-html="item.content" @contextmenu.prevent="onRightClick"></div>
+                                <div v-if="item.type=='text'" class="content other_word_content"  v-html="item.content" @contextmenu.prevent="onRightClick"></div>
+                                <div v-else class="content other_word_content">
+                                    <img src="./images/11.jpg" alt="">
+                                </div>
                              </div>
                              <div class="other_chat_content " v-if="item.quoteContent">
                                  <div class="content quote_chat_content"  v-html="item.quoteContent"></div>
@@ -98,7 +101,12 @@
                                     </div>
                                 </div>
                                 <div class="self_chat_content">
-                                    <div class="content sef_word_content"  v-html="item.content" @contextmenu.prevent="onRightClick"></div>
+                                    <div v-if="item.type=='text'" class="content sef_word_content"  v-html="item.content" @contextmenu.prevent="onRightClick"></div>
+                                    <div v-else class="content other_word_content">
+                                        <div :class="item.direction == 'horizontal' ? 'horizontal_div' : 'vertical_div'">
+                                            <img  :src="item.imageUrl" alt="">
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="self_chat_content" v-if="item.quoteContent">
                                     <div class="content quote_chat_content"  v-html="item.quoteContent"></div>
@@ -111,7 +119,8 @@
                     </ul>
                  </div>
                  <div v-if="activeIndex == 0 && isCureentEndSeesion" class="input_box" >
-                    <div class="input_content" id="aa" ref="self_input_content" contenteditable="true" @keydown="handlekeydown">
+                    <!-- 输入框 -->
+                    <div class="input_content" id="selfInput" ref="self_input_content" contenteditable="true" @keydown="handlekeydown" @paste="handlePaste">
                     </div>
                     <ul class="btns_ul">
                          <!-- <li>服务评价</li> -->
@@ -119,7 +128,7 @@
                     </ul>
                     <ul class="action_btns">
                          <li @click="sendContent"><Icon type="md-paper-plane" size="20" color="#fff"/></li>
-                         <li><Icon type="ios-image-outline" size="20" color="#fff"/></li>
+                         <li @click="triggerFileInput"><Icon type="ios-image-outline" size="20" color="#fff"/></li>
                     </ul>
                  </div>
                  <div v-if="!isCureentEndSeesion && activeIndex == 0 && !isEvaluationEnd" class="service_evaluation_box" >
@@ -159,6 +168,28 @@
             </div>
         </Transition>
 
+        <input type="file" ref="fileInput" id="fileInput" style="display: none" @change="handleFileChange">
+        <Modal width="350px" v-model="fileModal" draggable sticky scrollable :mask="false" title="是否发送：">
+            <ul class="files_ul">
+                <li>
+                   <div class="file_info">
+                        <img :src="files.imageUrl" alt="">
+                        <div class="file_name">
+                            <div class="names">{{files.name}}</div>
+                            <div>{{files.size}}</div>
+                        </div>
+                   </div>
+                   <!-- <Icon class="deletebtn" type="ios-trash" size="20"/> -->
+                </li>
+            </ul>
+            <template #footer>
+                <div class="fileModal_btns">
+                    <Button type="success" @click="sendImg">发送</Button>
+                    <Button @click="cancelFileModal">取消</Button>
+                </div>
+            </template>
+           
+        </Modal>
     </div>
 </template>
 
@@ -173,9 +204,11 @@ import Satisfied from './images/Satisfied.png'
 import Satisfied_active from './images/Satisfied_active.png'
 import Verysatisfied from './images/verysatisfied.png'
 import Verysatisfied_active from './images/verysatisfied_active.png'
+import {formatBytes} from './common'
 export default {
     data(){
         return {
+          fileModal:false,
           cursorPosition:0,
           activeIndex:0,
           contextContent:'',//右键点击的信息
@@ -214,8 +247,8 @@ export default {
                 startTime:'2025-03-04 10:30',
                 title:'黑科技范德萨李海峰阿斯利康多久发货打发了啊啊时间到了反馈hj',
                 historyRecord:[
-                    {type:'text',dateTime:'2025-05-15 19:11',Identity:'other',content:'你好',quoteContent:''},
-                    {type:'text',dateTime:'2025-05-15 19:11',Identity:'self',content:'你好好可怜伺服电机哈师大',quoteContent:''}
+                    {type:'text',dateTime:'2025-05-15 19:11',Identity:'other',content:'你好,',quoteContent:''},
+                    {type:'text',dateTime:'2025-05-15 19:11',Identity:'self',content:'你好伺服电机',quoteContent:'合规经理快递费说过话的'}
                 ]
             },
             {
@@ -235,10 +268,23 @@ export default {
             {startTime:'2025-03-04 10:30',title:'黑科技范德萨李海峰阿斯利康多久发货打发了啊啊时间到了反馈hj'},
           
          ],
-         chartContent:[] //聊天信息
+         isViewHistory:false, //是否查看点击历史记录
+         currentChatContent:[],//当前最新连天信息存储
+         historyChatContent:[],//历史聊天记录
+         files:{
+            name:'',
+            size:'',
+            direction:'',
+            width:'',
+            height:'',
+            imageUrl:null,
+         }
         }
     },
     computed:{
+        chatContent(){//聊天信息框内容
+           return this.isViewHistory ? this.historyChatContent : this.currentChatContent
+        },
         // 左侧会话记录原分页滑动逻辑
         // newRecord(){ 
         //     let arr = []
@@ -275,6 +321,14 @@ export default {
       if(this.isInline == 'inLine'){
         var CSname = this.chatPerson
         this.otherReply(`我是${CSname}，请问有什么可以帮您`)
+        var obj = {
+            startTime:this.getCurrentDate(),
+            title:'当前最新会话',
+            historyRecord:[]
+        }
+        setTimeout(() => {
+            this.chatRecords.unshift(obj)
+        },1000)
       }else if(this.isInline == 'Busy'){
             this.warningMessage = '当前客服繁忙中，将稍后回复您的问题!'
       }else{
@@ -282,6 +336,98 @@ export default {
       }
     },
     methods:{
+        handlePaste(event) {
+            // 阻止默认的粘贴行为
+            event.preventDefault();
+            // 获取剪贴板内容
+            const clipboardData = event.clipboardData || window.clipboardData;
+            const items = clipboardData.items;
+            const pastedItems = [];
+            // 检查每个项是否为图片
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf("image") !== -1) {
+                    const blob = items[i].getAsFile(); // 获取文件对象
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = document.createElement('img'); // 创建 img 元素
+                        img.src = e.target.result; // 设置图片源为读取结果
+                        img.style.maxWidth = '100px'; // 设置最大宽度
+                        img.style.maxHeight = '100px'; // 设置最大高度
+                        this.insertAtCaret(img); // 在光标位置插入图片
+                    };
+                    reader.readAsDataURL(blob); // 读取文件内容为 URL
+                } else {
+                    // 非图片内容，可以尝试插入文本等其他内容
+                    document.execCommand('insertText', false, clipboardData.getData('text/plain'));
+                }
+            }
+        },
+        insertAtCaret(element) {
+        // 获取当前光标位置并插入元素
+            const selection = window.getSelection();
+            if (selection.rangeCount) {
+                selection.getRangeAt(0).insertNode(element);
+                // 将光标移至插入元素之后
+                const range = document.createRange();
+                range.setStartAfter(element);
+                range.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+        },
+        sendImg(){
+            var obj = {type:'image',dateTime:this.getCurrentDate(),Identity:'self',direction:this.files.direction,imageUrl:this.files.imageUrl}
+            this.currentChatContent.push(obj)
+            this.fileModal = false 
+        },
+        cancelFileModal(){
+            this.fileModal = false
+            this.files = {
+                name:'',
+                size:'',
+                direction:'',
+                imageUrl:null,
+            }
+        },
+        triggerFileInput() {
+            this.$refs.fileInput.click();
+        },
+        handleFileChange(e) {
+           this.fileModal = true
+           let file = e.target.files[0]
+           if(!file) {
+                return; // 如果没有文件被选择，则直接返回
+            }
+            this.createImage(file); // 调用创建图片的方法
+        },
+        createImage(file) {
+            const reader = new FileReader(); // 创建一个FileReader实例
+            reader.onload = (e) => { // 读取完成后的回调函数
+                this.files.imageUrl = e.target.result; // 设置图片URL到data属性中
+                this.getImageDimensions(e.target.result)
+            };
+            this.files.name = file.name
+            this.files.size = formatBytes(file.size)
+            reader.readAsDataURL(file); // 读取文件内容为DataURL
+            document.querySelector("#fileInput").setAttribute('type', 'text');
+            setTimeout(() => {
+                document.querySelector("#fileInput").setAttribute('type', 'file')
+            },1000)
+        },
+        getImageDimensions(base64) {
+            const img = new Image();
+            img.onload = () => {
+                const width = img.naturalWidth;
+                const height = img.naturalHeight;
+                if(width > height){
+                    this.files.direction = 'horizontal'
+                }else{
+                    this.files.direction = 'vertical'
+                }
+            };
+            img.src = base64; // 注意这里用的是Base64 URL，不是Blob URL
+            
+        },
         defineEndConversation(){
           this.isCureentEndSeesion = false
           this.isEvaluationEnd = true
@@ -330,16 +476,22 @@ export default {
             } else if (event.key === 'Enter') {
                 // 普通回车键，执行换行或其它操作
                 event.preventDefault(); // 阻止默认的换行行为
-                if(this.$refs.self_input_content.innerText.trim() !== ''){
-                    this.sendContent()
-                }
+                this.sendContent()
+                // if(this.$refs.self_input_content.innerText.trim() !== ''){
+                //     this.sendContent()
+                // }
                
             }
         },
         clickRecord(item,index){
            this.activeIndex = index
-           this.chartContent = []
-           this.chartContent=item.historyRecord
+           if(index !== 0){
+             this.isViewHistory = true
+             this.historyChatContent = item.historyRecord
+           }else{
+            this.isViewHistory = false
+           }
+         
         },
         //引用
         doQuote(){
@@ -347,9 +499,9 @@ export default {
             if(this.contextContent.target.innerText){
                this.$refs.self_input_content.focus();
                this.quoteMessage = this.contextContent.target.innerText
-               var parentDiv = document.getElementById('aa')
+               var parentDiv = document.getElementById('selfInput')
                var elements = document.querySelector('.quoteMessage_box');
-               if (elements && elements.classList.contains('quoteMessage_box')) { // 检查元素是否存在以及是否包含'aa'类
+               if (elements && elements.classList.contains('quoteMessage_box')) { // 检查元素是否存在以及是否包含'selfInput'类
                         elements.parentNode.removeChild(elements);
                 }else{
                     var br = document.createElement("br");
@@ -386,12 +538,24 @@ export default {
                 quoteHtml = elements.innerHTML
                 elements.parentNode.removeChild(elements);
             }
-            if(this.$refs.self_input_content.innerText.trim() == ''){
+           
+            // 获取所有<img>元素
+            var parentDiv = document.getElementById('selfInput')
+            const imgs = parentDiv.querySelectorAll('img');
+            if(imgs.length !== 0){
+                // 遍历这些元素并打印它们的src属性
+                imgs.forEach(img => {
+                    this.getImageDimensions(img.src)
+                    var obj = {type:'image',dateTime:this.getCurrentDate(),Identity:'self',direction:this.files.direction,imageUrl:img.src}
+                    this.currentChatContent.push(obj)
+                });
+            }
+
+            let inputText = this.$refs.self_input_content.innerText
+            if(inputText.trim() == ''){
                 return
             }
-            let value = this.$refs.self_input_content.innerHTML
-            // return
-            let valueArr = value.split('\n')
+            let valueArr = inputText.split('\n')
             let newValue = ''
             valueArr.forEach((item,index) => {
                 if(index == valueArr.length -1){
@@ -407,13 +571,16 @@ export default {
                 content:newValue,
                 quoteContent:quoteHtml
             }
-            this.chartContent.push(obj)
-            this.$refs.self_input_content.innerText = ''
+            this.currentChatContent.push(obj)
+            this.goRollBottom()
+            this.$refs.self_input_content.innerHTML=''
+            this.otherReply('你好，请问你遇到什么问题，我这里有什么可以帮助到你的吗？ ')
+        },
+        goRollBottom(){
             this.$nextTick(() => {
                 const ulElement = this.$refs.session_box;
                 ulElement.scrollTop = ulElement.scrollHeight;
             });
-            this.otherReply('你好，请问你遇到什么问题，我这里有什么可以帮助到你的吗？ ')
         },
         otherReply(valuehtml){
             let replyContent = valuehtml
@@ -426,7 +593,7 @@ export default {
                 }
             if(this.isInline == 'inLine'){
                 setTimeout(() => {
-                this.chartContent.push(obj)
+                this.currentChatContent.push(obj)
                 this.$nextTick(() => {
                         const ulElement = this.$refs.session_box;
                         ulElement.scrollTop = ulElement.scrollHeight;
@@ -697,6 +864,7 @@ export default {
                                    padding:6px 10px;
                                    border-radius: 15px; 
                                    background-color: #fff;
+                                   
                                 }  
                                 .quote_chat_content{
                                    background-color: #d8d8d8;
@@ -730,6 +898,18 @@ export default {
                                    padding:6px 10px;
                                    border-radius: 15px; 
                                    background-color: #fff;
+                                   .vertical_div{
+                                      height:200px;
+                                      img{
+                                        height:100%;
+                                      }
+                                   }
+                                   .horizontal_div{
+                                      width:200px;
+                                      img{
+                                        width:100%;
+                                      }
+                                   }
                                 }
                                 .quote_chat_content{
                                    background-color: #d8d8d8;
@@ -877,6 +1057,49 @@ export default {
       border-radius:4px ;
     }
   }
+}
+
+.fileModal_btns{
+    width:100%;
+    display:flex;
+    justify-content:space-around;
+    /deep/.ivu-btn{
+        padding:0 40px
+    }
+}
+.files_ul{
+    padding-bottom:20px;
+    li{
+     display:flex;
+     align-items:center;
+     justify-content:space-between;
+     cursor:pointer;
+     .file_info{
+        display:flex;
+        align-items:center;
+        img{
+            height:45px;
+            width:45px;
+        }
+        .file_name{
+            margin-left:15px;
+            width:200px;
+            .names{
+                white-space:nowrap;
+                overflow:hidden;
+                text-overflow:ellipsis;
+            }
+        }
+     }
+     .deletebtn{
+        display:none;
+     }
+    }
+    li:hover{
+        .deletebtn{
+            display:block;
+        }
+    }
 }
 
 /* 修改滚动条的宽度和颜色 */

@@ -1,8 +1,10 @@
 <template>
     <div class="chat_content_box">
-        <div class="maskModal">
+        <div v-if="isShowchatModal" class="maskModal" :style="chatModalStyle">
+            <!-- 左侧信息和记录列表 -->
            <div class="left_info_box">
-              <div class="otherInfo_box">
+              <!-- 聊天对象为客服时，客服的基本信息 -->
+              <div v-if="IdentityMark=='CS'" class="otherInfo_box" >
                 <div class="avatar">
                    <img src="./images/customerService.png" alt="">
                     <Tooltip :content="getStatusText">
@@ -13,8 +15,21 @@
                  <span class="timeRange" style="margin-top: 10px;">在线客服时间：</span>
                  <span class="timeRange">周一至周五：09:00 - 18:00</span>
               </div>
+               <!-- 聊天对象为用户时，用户的基本信息 -->
+              <div v-else class="otherInfo_box">
+                <div class="avatar">
+                   <img src="./images/userPicture.png" alt="">
+                    <Tooltip :content="getStatusText">
+                         <div class="circle_status" :style="{backgroundColor:getStatusColor}"></div>
+                    </Tooltip><br><br>
+                </div>
+                 <span style="font-weight: 700;font-size:16px;margin-top: 10px;">{{chatPerson}}</span>
+                 <span class="timeRange" style="margin-top: 10px;">广安分公司</span>
+                 <span class="timeRange">计划建设部</span>
+              </div>
               <div class="chat_records">
                  <Input suffix="ios-search" placeholder="历史会话记录" style="width: auto;margin-top: 10px;" />
+                 <!-- 历史会话记录 -->
                  <div class="records_carousel">
                    <!-- 原会话记录分页代码 -->
                    <!-- <Carousel
@@ -51,30 +66,36 @@
                  </div> -->
               </div>
            </div>
+           <!-- 右侧聊天框 -->
            <div class="right_chat_box">
+               <!-- 右侧聊天会话框的头部 -->
               <div class="chat_header_box">
                 <ul  class="header_btns_box">
                    <li>
-                      <Icon type="ios-remove" size="28" color="#2db7f5"/>
+                      <Icon type="ios-remove" size="28" color="#2db7f5" @click="closeChatModal"/>
                    </li>
                    <li>
-                      <Icon type="ios-expand" size="16" color="#2db7f5" style="font-weight: 700;"/>
+                      <Icon type="ios-expand" size="16" color="#2db7f5" style="font-weight: 700;" @click="openFullScreen"/>
                    </li>
                    <li>
-                      <Icon type="ios-close" size="30" color="#2db7f5"/>
+                      <Icon type="ios-close" size="30" color="#2db7f5" @click="isShowchatModal=false"/>
                    </li>
                 </ul>
                 <div class="system_type">
                     当前咨询系统：<span class="system_name">集中化PMS</span>
                 </div>
               </div>
+               <!-- 右侧会话聊天框 -->
               <div class="chating_box">
                  <div ref="session_box" class="session_box">
                     <ul  class="session_chat_ul">
-                        <li v-if="isInline == 'Busy' || isInline == 'no-inline'" class="systemWarning">
+                        <!-- 当聊天对象是客服时，客服不在线的时候的状态提醒语 -->
+                        <li v-if="IdentityMark== 'CS' &&  isInline == 'Busy' || isInline == 'no-inline'" class="systemWarning">
                             <span>{{ warningMessage }}</span>
                         </li>
+                        <!-- 双方聊天信息展示框 -->
                         <li v-for="(item,index) in chatContent" :key="index">
+                            <!-- 聊天对象（左侧）信息展示 -->
                            <div v-if="item.Identity == 'other'" class="other_content_box">
                              <div class="other_info_box">
                                 <div class="otherImg">
@@ -86,13 +107,16 @@
                              <div class="other_chat_content">
                                 <div v-if="item.type=='text'" class="content other_word_content"  v-html="item.content" @contextmenu.prevent="onRightClick"></div>
                                 <div v-else class="content other_word_content">
-                                    <img src="./images/11.jpg" alt="">
+                                    <div :class="item.direction == 'horizontal' ? 'horizontal_div' : 'vertical_div'">
+                                        <img  :src="item.imageUrl" alt="" @contextmenu.prevent="onRightClick">
+                                    </div>
                                 </div>
                              </div>
                              <div class="other_chat_content " v-if="item.quoteContent">
                                  <div class="content quote_chat_content"  v-html="item.quoteContent"></div>
                              </div>
                            </div>
+                           <!-- 自己（右侧）发送的信息展示 -->
                            <div v-else class="self_content_box">
                                 <div class="self_info_box">
                                     <span style="padding: 0 10px;">{{ item.dateTime }}</span>
@@ -104,7 +128,7 @@
                                     <div v-if="item.type=='text'" class="content sef_word_content"  v-html="item.content" @contextmenu.prevent="onRightClick"></div>
                                     <div v-else class="content other_word_content">
                                         <div :class="item.direction == 'horizontal' ? 'horizontal_div' : 'vertical_div'">
-                                            <img  :src="item.imageUrl" alt="">
+                                            <img  :src="item.imageUrl" alt=""  @contextmenu.prevent="onRightClick">
                                         </div>
                                     </div>
                                 </div>
@@ -113,24 +137,33 @@
                                 </div>
                            </div>
                         </li>
+                        <!-- 会话结束后的提示语 -->
                         <li v-if="!isCureentEndSeesion || activeIndex !== 0" class="systemWarning">
                             <span>（会话已结束）</span>
                         </li>
                     </ul>
                  </div>
+                 <!-- 右侧聊天框区域最下方的输入框区域 -->
                  <div v-if="activeIndex == 0 && isCureentEndSeesion" class="input_box" >
-                    <!-- 输入框 -->
+                    <!-- 自己发送消息的输入框 -->
                     <div class="input_content" id="selfInput" ref="self_input_content" contenteditable="true" @keydown="handlekeydown" @paste="handlePaste">
                     </div>
+                    <!-- 用户和客服角色的一些按钮 -->
                     <ul class="btns_ul">
-                         <!-- <li>服务评价</li> -->
-                         <li @click="clickEndSesseion">结束会话</li>
+                         <li  v-if="IdentityMark == 'CS'" @click="clickEndSesseion">结束会话</li>
+                         <li  v-if="IdentityMark == 'US'">引用知识库</li>
+                         <li  v-if="IdentityMark == 'US'">问题归集</li>
+                         <li v-if="IdentityMark == 'US'">发起专家支撑</li>
                     </ul>
+                    <!-- 发送信息的按钮和上传图片的按钮 -->
                     <ul class="action_btns">
                          <li @click="sendContent"><Icon type="md-paper-plane" size="20" color="#fff"/></li>
                          <li @click="triggerFileInput"><Icon type="ios-image-outline" size="20" color="#fff"/></li>
                     </ul>
                  </div>
+                 <!-- 聊天对象为用户时，结束会话展示的按钮 -->
+                 <div v-if="(activeIndex !== 0 && IdentityMark=='US') || (activeIndex == 0 && !isCureentEndSeesion &&IdentityMark=='US')" class="question_btn">问题归集</div>
+                 <!-- 用户结束当前会话，并给予评价的弹窗 -->
                  <div v-if="!isCureentEndSeesion && activeIndex == 0 && !isEvaluationEnd" class="service_evaluation_box" >
                       <span class="evaluation_title">要结束本次会话吗？</span>
                       <ul class="evaluation_ul">
@@ -159,6 +192,7 @@
               </div>
            </div>
         </div>
+        <!-- 聊天信息的右键点击弹窗菜单（复制、引用） -->
        <Transition name="slide-down">
             <div v-clickOutside="clicktabModal" class="tabsModal" ref="modalRef" v-show="isShowModal" :style="{top:topWidth+'px',left:leftWidth +'px'}">
                 <ul>
@@ -167,8 +201,9 @@
                 </ul>
             </div>
         </Transition>
-
+        <!-- 图片上传弹窗 -->
         <input type="file" ref="fileInput" id="fileInput" style="display: none" @change="handleFileChange">
+        <!--上传图片确认列表 -->
         <Modal width="350px" v-model="fileModal" draggable sticky scrollable :mask="false" title="是否发送：">
             <ul class="files_ul">
                 <li>
@@ -190,10 +225,15 @@
             </template>
            
         </Modal>
+        <!-- 项目全局悬浮图标，控制聊天弹窗的显示和隐藏 -->
+        <div class="CSOpenBtn" @click="switchChatModal">
+            <img src="./images/customerService.png"  alt=""></img>
+        </div>
     </div>
 </template>
 
 <script>
+import otherImg from './images/11.jpg'
 import CSimg from './images/userPicture.png'
 import USimg from './images/customerService.png'
 import Notsatisfied from './images/notsatisfied.png'
@@ -208,6 +248,12 @@ import {formatBytes} from './common'
 export default {
     data(){
         return {
+          chatModalStyle:{ 
+            width: '75%',
+            height: '85%',
+          },
+          isFullScreen:false,
+          isShowchatModal:true,
           fileModal:false,
           cursorPosition:0,
           activeIndex:0,
@@ -218,8 +264,8 @@ export default {
           topWidth:0,
           leftWidth:0,
           currentIndex: 0,
-          chatPerson:'002客服',//聊天对象
-          IdentityMark:'CS',//CS--客服，US--用户
+          chatPerson:'张某某',//聊天对象名称
+          IdentityMark:'US',//CS--客服，US--用户//聊天对象标识
           isInline:'inLine',//客服是否在线   inLine-在线，Busy-忙碌 no-inline 离线
           statusList:[{label:'在线',value:'inLine'},{label:'忙碌',value:'Busy'},{label:'离线',value:'no-inline'}],
           warningMessage:'',
@@ -248,7 +294,8 @@ export default {
                 title:'黑科技范德萨李海峰阿斯利康多久发货打发了啊啊时间到了反馈hj',
                 historyRecord:[
                     {type:'text',dateTime:'2025-05-15 19:11',Identity:'other',content:'你好,',quoteContent:''},
-                    {type:'text',dateTime:'2025-05-15 19:11',Identity:'self',content:'你好伺服电机',quoteContent:'合规经理快递费说过话的'}
+                    {type:'text',dateTime:'2025-05-15 19:11',Identity:'self',content:'你好伺服电机',quoteContent:'合规经理快递费说过话的'},
+                    {type:'img',dateTime:'2025-05-15 19:11',Identity:'other',content:'你好,',quoteContent:'',imageUrl:otherImg,direction:'horizontal'},
                 ]
             },
             {
@@ -318,9 +365,9 @@ export default {
         }
     },
     mounted(){
-      if(this.isInline == 'inLine'){
+      if(this.isInline == 'inLine' && this.IdentityMark == 'CS'){
         var CSname = this.chatPerson
-        this.otherReply(`我是${CSname}，请问有什么可以帮您`)
+        this.otherReply(`我是${CSname}，请问有什么可以帮您？`)
         var obj = {
             startTime:this.getCurrentDate(),
             title:'当前最新会话',
@@ -329,13 +376,35 @@ export default {
         setTimeout(() => {
             this.chatRecords.unshift(obj)
         },1000)
-      }else if(this.isInline == 'Busy'){
+      }else if(this.isInline == 'Busy' && this.IdentityMark == 'CS'){
             this.warningMessage = '当前客服繁忙中，将稍后回复您的问题!'
-      }else{
+      }else if(this.isInline == 'no-inline' && this.IdentityMark == 'CS'){
           this.warningMessage ='当前客服已离线，您可以咨询留言'
       }
     },
     methods:{
+        //切换全屏和弹窗的事件
+        openFullScreen(){
+            if(!this.isFullScreen){
+                this.chatModalStyle.width="100%"
+                this.chatModalStyle.height="100%"
+                this.isFullScreen = true
+            }else{
+                this.chatModalStyle.width="75%"
+                this.chatModalStyle.height="85%"
+                this.isFullScreen = false
+            }
+           
+        },
+        //弹窗的显示和隐藏
+        switchChatModal(){
+            this.isShowchatModal=!this.isShowchatModal
+        },
+        //关闭对话聊天弹窗
+        closeChatModal(){
+           this.isShowchatModal = false
+        },
+        //聊天输入框的粘贴事件
         handlePaste(event) {
             // 阻止默认的粘贴行为
             event.preventDefault();
@@ -362,6 +431,7 @@ export default {
                 }
             }
         },
+        //输入框插入图片后光标移至到图片后
         insertAtCaret(element) {
         // 获取当前光标位置并插入元素
             const selection = window.getSelection();
@@ -375,11 +445,14 @@ export default {
                 selection.addRange(range);
             }
         },
+        //是否发送图片列表的发送图片事件
         sendImg(){
             var obj = {type:'image',dateTime:this.getCurrentDate(),Identity:'self',direction:this.files.direction,imageUrl:this.files.imageUrl}
             this.currentChatContent.push(obj)
+           
             this.fileModal = false 
         },
+        // 关闭是否发送图片弹窗并清空发送的图片文件信息
         cancelFileModal(){
             this.fileModal = false
             this.files = {
@@ -389,6 +462,7 @@ export default {
                 imageUrl:null,
             }
         },
+        // 点击按钮触发图片上传按钮
         triggerFileInput() {
             this.$refs.fileInput.click();
         },
@@ -496,9 +570,9 @@ export default {
         //引用
         doQuote(){
             this.quoteMessage = ''
-            if(this.contextContent.target.innerText){
+            if(this.contextContent.target.innerText || this.contextContent.target.currentSrc){
                this.$refs.self_input_content.focus();
-               this.quoteMessage = this.contextContent.target.innerText
+               this.quoteMessage = this.contextContent.target.innerText ? this.contextContent.target.innerText : this.contextContent.target.currentSrc
                var parentDiv = document.getElementById('selfInput')
                var elements = document.querySelector('.quoteMessage_box');
                if (elements && elements.classList.contains('quoteMessage_box')) { // 检查元素是否存在以及是否包含'selfInput'类
@@ -511,25 +585,67 @@ export default {
                 div.className = 'quoteMessage_box';
                 div.setAttribute('style','display: inline-block;background-color:#e2e2e2;padding: 5px 10px;border-radius: 5px;')
                 div.setAttribute('contenteditable','false')
-                div.textContent=this.quoteMessage
+                if(this.contextContent.target.innerText){
+                    div.textContent=this.quoteMessage
+                }
                 parentDiv.appendChild(div)
+                if(this.contextContent.target.currentSrc){
+                    var quoteMessagediv = document.querySelector('.quoteMessage_box');
+                    var imgDiv = document.createElement("img");
+                    imgDiv.setAttribute('style','width:100px;')
+                    imgDiv.setAttribute('src',this.quoteMessage)
+                    quoteMessagediv.appendChild(imgDiv)
+                }
+
                 this.isShowModal = false
             }
         },
         //复制
-        doCopy(){
+        async doCopy(){
             this.copyMessage = ''
             if(this.contextContent.target.innerText){
                this.copyMessage = this.contextContent.target.innerText
+               this.$copyText(this.copyMessage).then(res => {
+                    this.$Message.success('复制成功！')
+                }, err => {
+                    this.$Message.error('复制失败！')
+                })
             }
-            this.$copyText(this.copyMessage).then(res => {
-                this.$Message.success('复制成功！')
-                console.log(res)
-            }, err => {
-               this.$Message.error('复制失败！')
-            })
+            if(this.contextContent.target.currentSrc){
+                let  imageUrl= this.contextContent.target.currentSrc
+                try {
+                    // 创建一个Image对象
+                    const img = new Image();
+                    img.src = imageUrl;
+                    await new Promise((resolve, reject) => {
+                        img.onload = resolve;
+                        img.onerror = reject;
+                    });
+            
+                    // 创建一个Canvas元素
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+            
+                    // 将Canvas内容转换为Blob对象
+                    canvas.toBlob(async (blob) => {
+                    if (blob) {
+                        // 将Blob写入剪贴板
+                        await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+                        this.$Message.success('图片复制成功！');
+                    } else {
+                        console.error('无法创建Blob');
+                    }
+                    }, 'image/png'); // 指定图片格式为PNG
+                } catch (error) {
+                    console.error('复制图片失败:', error);
+                }
+            }
             this.isShowModal = false
         },
+
         //发送输入内容
         sendContent(){
             var quoteHtml=''
@@ -553,6 +669,8 @@ export default {
 
             let inputText = this.$refs.self_input_content.innerText
             if(inputText.trim() == ''){
+                this.goRollBottom()
+               this.$refs.self_input_content.innerHTML=''
                 return
             }
             let valueArr = inputText.split('\n')
@@ -582,6 +700,7 @@ export default {
                 ulElement.scrollTop = ulElement.scrollHeight;
             });
         },
+        // 用户自动回复信息事件
         otherReply(valuehtml){
             let replyContent = valuehtml
               let obj =  {
@@ -657,8 +776,7 @@ export default {
     height: 100%;
     position: relative;
     .maskModal{
-        width: 70%;
-        height: 85%;
+        
         border-radius: 4px;
         position:fixed;
         top:50%;
@@ -864,7 +982,18 @@ export default {
                                    padding:6px 10px;
                                    border-radius: 15px; 
                                    background-color: #fff;
-                                   
+                                   .vertical_div{
+                                      height:200px;
+                                      img{
+                                        height:100%;
+                                      }
+                                   }
+                                   .horizontal_div{
+                                      width:200px;
+                                      img{
+                                        width:100%;
+                                      }
+                                   }
                                 }  
                                 .quote_chat_content{
                                    background-color: #d8d8d8;
@@ -1026,8 +1155,28 @@ export default {
                      justify-content: space-around;
                    }
                 }
+                .question_btn{
+                    position:absolute;
+                    bottom:10px;
+                    left:10px;
+                    padding: 5px 12px;
+                    border-radius: 10px;
+                    background-color: #fff;
+                    color:#999999;
+                    cursor: pointer;
+                }
+                .question_btn:hover{
+                    background-color: #f3f3f3;
+                    color:#555555;
+                }
             }
         }
+    }
+    .CSOpenBtn{
+        position:fixed;
+        right:10px;
+        bottom:80px;
+        cursor:pointer;
     }
 }
 .slide-down-enter-active, .slide-down-leave-active {
@@ -1101,6 +1250,12 @@ export default {
         }
     }
 }
+.CSOpenBtn{
+    position:fixed;
+    right:20px;
+    bottom:50px;
+}
+
 
 /* 修改滚动条的宽度和颜色 */
 ::-webkit-scrollbar {
